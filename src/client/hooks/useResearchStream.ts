@@ -93,5 +93,17 @@ export function useResearchStream() {
 		setState(prev => ({ ...prev, is_loading: false }))
 	}, [])
 
-	return { ...state, startResearch }
+	const reset = useCallback(() => {
+		setState({
+			is_loading: false,
+			events: [],
+			report: null,
+			sources: [],
+			session_viewer_url: null,
+			debug_url: null,
+			error: null,
+		})
+	}, [])
+
+	return { ...state, startResearch, reset }
 }

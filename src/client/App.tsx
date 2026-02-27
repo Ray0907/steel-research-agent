@@ -13,6 +13,7 @@ export default function App() {
 		debug_url,
 		error,
 		startResearch,
+		reset,
 	} = useResearchStream()
 
 	return (
@@ -25,12 +26,22 @@ export default function App() {
 							AI-powered deep web research using Steel's browser infrastructure
 						</p>
 					</div>
-					{is_loading && (
-						<div className="flex items-center gap-2 text-sm text-blue-400">
-							<div className="h-2 w-2 animate-pulse rounded-full bg-blue-400" />
-							Researching...
-						</div>
-					)}
+					<div className="flex items-center gap-3">
+						{report && (
+							<button
+								onClick={reset}
+								className="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800 transition-colors"
+							>
+								New Research
+							</button>
+						)}
+						{is_loading && (
+							<div className="flex items-center gap-2 text-sm text-blue-400">
+								<div className="h-2 w-2 animate-pulse rounded-full bg-blue-400" />
+								Researching...
+							</div>
+						)}
+					</div>
 				</div>
 			</header>
 
