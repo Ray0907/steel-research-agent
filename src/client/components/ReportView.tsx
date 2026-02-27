@@ -1,5 +1,7 @@
-import ReactMarkdown from "react-markdown"
+import { lazy, Suspense } from "react"
 import type { Source } from "../../shared/types.js"
+
+const ReactMarkdown = lazy(() => import("react-markdown"))
 
 interface Props {
 	report: string | null
@@ -13,7 +15,9 @@ export function ReportView({ report, sources }: Props) {
 		<div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-6">
 			<h2 className="mb-4 text-lg font-semibold text-zinc-100">Research Report</h2>
 			<div className="prose prose-invert max-w-none prose-headings:text-zinc-100 prose-p:text-zinc-300 prose-a:text-blue-400">
-				<ReactMarkdown>{report}</ReactMarkdown>
+				<Suspense fallback={<p className="text-zinc-500">Loading report...</p>}>
+					<ReactMarkdown>{report}</ReactMarkdown>
+				</Suspense>
 			</div>
 			{sources.length > 0 && (
 				<div className="mt-6 border-t border-zinc-800 pt-4">

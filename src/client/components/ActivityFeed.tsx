@@ -41,7 +41,7 @@ export function ActivityFeed({ events }: Props) {
 
 	useEffect(() => {
 		ref_bottom.current?.scrollIntoView({ behavior: "smooth" })
-	}, [events])
+	}, [events.length])
 
 	if (events.length === 0) {
 		return (
