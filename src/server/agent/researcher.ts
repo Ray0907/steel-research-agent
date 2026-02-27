@@ -43,7 +43,7 @@ export async function runResearch(
 
 		for (let i = 0; i < max_iterations; i++) {
 			const response = await anthropic.messages.create({
-				model: "claude-sonnet-4-5-20250514",
+				model: "claude-sonnet-4-6",
 				max_tokens: 4096,
 				system: SYSTEM_PROMPT,
 				tools: TOOL_DEFINITIONS,
