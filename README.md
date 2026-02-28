@@ -40,6 +40,7 @@ flowchart TB
         PW[Playwright CDP]
     end
 
+
     UI -->|POST + SSE stream| API
     API --> Agent
     Agent -->|tool calls| Claude
@@ -94,6 +95,7 @@ sequenceDiagram
 | Backend | Fastify 5, TypeScript 5.9 |
 | AI | Claude Sonnet 4.6 (Anthropic SDK) |
 | Browser | Steel SDK, Playwright (CDP) |
+| Infrastructure | Docker |
 | Realtime | Server-Sent Events (SSE) |
 | Storage | IndexedDB (client-side history) |
 | Streaming | HLS.js (session recording) |
@@ -108,6 +110,8 @@ sequenceDiagram
 
 ## Setup
 
+### Local Development
+
 ```bash
 # Clone and install
 git clone https://github.com/Ray0907/steel-research-agent.git
@@ -121,6 +125,18 @@ cp .env.example .env
 # Run development servers
 pnpm dev
 ```
+
+### Docker
+
+```bash
+# Configure API keys
+cp .env.example .env
+
+# Build and run
+docker compose up --build
+```
+
+The app will be available at http://localhost:3001.
 
 Get your Steel API key at [app.steel.dev](https://app.steel.dev/settings/api-keys).
 

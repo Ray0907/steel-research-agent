@@ -1,0 +1,12 @@
+node_modules
+dist
+.env
+.env.*
+.git
+.gitignore
+*.mov
+*.mp4
+*.md
+docs/
+tmp.txt
+.claude/

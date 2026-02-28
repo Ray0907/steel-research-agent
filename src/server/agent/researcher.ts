@@ -95,7 +95,7 @@ export async function runResearch(
 				const input = tool_use.input as Record<string, unknown>
 				const query = input.query as string
 				emit({ type: "searching", query })
-				const result = await searchGoogle(bs, query)
+				const result = await searchGoogle(bs!, query)
 				tool_results.push({
 					type: "tool_result",
 					tool_use_id: tool_use.id,
@@ -116,7 +116,7 @@ export async function runResearch(
 					visit_calls.map(async (tool_use) => {
 						const input = tool_use.input as Record<string, unknown>
 						const url = input.url as string
-						const content = await visitPage(bs, url)
+						const content = await visitPage(bs!, url)
 						return {
 							type: "tool_result" as const,
 							tool_use_id: tool_use.id,
