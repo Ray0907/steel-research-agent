@@ -21,7 +21,10 @@
     "@fastify/static": "^9.0.0",
     "dotenv": "^17.3.1",
     "fastify": "^5.7.4",
+    "hls.js": "^1.6.15",
+    "idb": "^8.0.3",
     "playwright": "^1.58.2",
+    "remark-gfm": "^4.0.1",
     "steel-sdk": "^0.17.0",
     "zod": "^4.3.6"
   },

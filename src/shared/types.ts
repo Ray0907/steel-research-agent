@@ -4,7 +4,7 @@ export interface Source {
 }
 
 export type ProgressEvent =
-	| { type: "session_created"; session_viewer_url: string; debug_url: string }
+	| { type: "session_created"; steel_session_id: string; session_viewer_url: string; debug_url: string }
 	| { type: "searching"; query: string }
 	| { type: "visiting"; url: string; reason: string }
 	| { type: "reading"; url: string; page_number: number; total: number }

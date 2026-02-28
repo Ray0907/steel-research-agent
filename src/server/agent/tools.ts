@@ -42,48 +42,63 @@ export async function searchGoogle(
 	bs: BrowserSession,
 	query: string,
 ): Promise<string> {
+	// Use DuckDuckGo HTML version -- much less bot detection than Google
 	const encoded_query = encodeURIComponent(query)
 	await bs.page.goto(
-		`https://www.google.com/search?q=${encoded_query}`,
+		`https://html.duckduckgo.com/html/?q=${encoded_query}`,
 		{ waitUntil: "domcontentloaded", timeout: 15000 },
 	)
 
-	await bs.page.waitForSelector("#search", { timeout: 10000 }).catch(() => {})
-
 	const results = await bs.page.evaluate(() => {
 		const items: { title: string; url: string; snippet: string }[] = []
-		const elements = document.querySelectorAll("#search .g")
+		const elements = document.querySelectorAll(".result")
 
 		for (let i = 0; i < Math.min(elements.length, 10); i++) {
 			const el = elements[i]
-			const link = el.querySelector("a")
-			const title_el = el.querySelector("h3")
-			const snippet_el = el.querySelector("[data-sncf], .VwiC3b, .IsZvec")
+			const link = el.querySelector("a.result__a") as HTMLAnchorElement | null
+			const snippet_el = el.querySelector(".result__snippet")
 
-			if (link && title_el) {
+			if (link) {
 				items.push({
-					title: title_el.textContent || "",
+					title: link.textContent?.trim() || "",
 					url: link.href || "",
-					snippet: snippet_el?.textContent || "",
+					snippet: snippet_el?.textContent?.trim() || "",
 				})
 			}
 		}
 		return items
 	})
 
-	if (results.length === 0) {
+	const filtered = results.filter(r => !isBlockedUrl(r.url))
+
+	if (filtered.length === 0) {
 		return "No search results found. Try a different query."
 	}
 
-	return results
+	return filtered
 		.map((r, i) => `${i + 1}. **${r.title}**\n   URL: ${r.url}\n   ${r.snippet}`)
 		.join("\n\n")
+}
+
+const BLOCKED_DOMAINS = ["google.com", "google.co", "googleapis.com", "gstatic.com"]
+
+function isBlockedUrl(url: string): boolean {
+	try {
+		const hostname = new URL(url).hostname
+		return BLOCKED_DOMAINS.some(d => hostname === d || hostname.endsWith(`.${d}`))
+	} catch {
+		return false
+	}
 }
 
 export async function visitPage(
 	bs: BrowserSession,
 	url: string,
 ): Promise<string> {
+	if (isBlockedUrl(url)) {
+		return "This URL is on a blocked domain (Google). Google blocks cloud browser IPs. Please use a different source for this information."
+	}
+
 	try {
 		const result = await bs.steel_client.scrape({
 			url,

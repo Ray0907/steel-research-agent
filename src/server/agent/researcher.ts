@@ -29,6 +29,7 @@ export async function runResearch(
 
 		emit({
 			type: "session_created",
+			steel_session_id: bs.session.id,
 			session_viewer_url: bs.session.sessionViewerUrl,
 			debug_url: bs.session.debugUrl,
 		})
@@ -38,8 +39,8 @@ export async function runResearch(
 		]
 
 		let page_count = 0
-		const max_pages = 8
-		const max_iterations = 20
+		const max_pages = 3
+		const max_iterations = 10
 
 		for (let i = 0; i < max_iterations; i++) {
 			const response = await anthropic.messages.create({
@@ -73,48 +74,58 @@ export async function runResearch(
 				return { report: text || "Research complete but no report generated.", sources: [] }
 			}
 
+			// Check for finish_research first (early exit)
+			const finish_call = tool_uses.find(t => t.name === "finish_research")
+			if (finish_call) {
+				const input = finish_call.input as Record<string, unknown>
+				const report = (input.report as string) || ""
+				const sources = (input.sources as Source[]) || []
+				emit({ type: "report_ready", report, sources })
+				return { report, sources }
+			}
+
+			// Separate search and visit calls
+			const search_calls = tool_uses.filter(t => t.name === "search_google")
+			const visit_calls = tool_uses.filter(t => t.name === "visit_page")
+
+			// Execute searches sequentially (they use the browser)
 			const tool_results: Anthropic.ToolResultBlockParam[] = []
 
-			for (const tool_use of tool_uses) {
+			for (const tool_use of search_calls) {
 				const input = tool_use.input as Record<string, unknown>
+				const query = input.query as string
+				emit({ type: "searching", query })
+				const result = await searchGoogle(bs, query)
+				tool_results.push({
+					type: "tool_result",
+					tool_use_id: tool_use.id,
+					content: result,
+				})
+			}
 
-				if (tool_use.name === "finish_research") {
-					const report = (input.report as string) || ""
-					const sources = (input.sources as Source[]) || []
-
-					emit({ type: "report_ready", report, sources })
-					return { report, sources }
-				}
-
-				if (tool_use.name === "search_google") {
-					const query = input.query as string
-					emit({ type: "searching", query })
-
-					const result = await searchGoogle(bs, query)
-
-					tool_results.push({
-						type: "tool_result",
-						tool_use_id: tool_use.id,
-						content: result,
-					})
-				}
-
-				if (tool_use.name === "visit_page") {
-					const url = input.url as string
-					const reason = input.reason as string
-
+			// Execute ALL page visits in parallel (scrape API doesn't need browser)
+			if (visit_calls.length > 0) {
+				for (const tool_use of visit_calls) {
+					const input = tool_use.input as Record<string, unknown>
 					page_count++
-					emit({ type: "visiting", url, reason })
-					emit({ type: "reading", url, page_number: page_count, total: max_pages })
-
-					const content = await visitPage(bs, url)
-
-					tool_results.push({
-						type: "tool_result",
-						tool_use_id: tool_use.id,
-						content: `Content from ${url}:\n\n${content}`,
-					})
+					emit({ type: "visiting", url: input.url as string, reason: input.reason as string })
 				}
+				emit({ type: "reading", url: "", page_number: page_count, total: max_pages })
+
+				const visit_results = await Promise.all(
+					visit_calls.map(async (tool_use) => {
+						const input = tool_use.input as Record<string, unknown>
+						const url = input.url as string
+						const content = await visitPage(bs, url)
+						return {
+							type: "tool_result" as const,
+							tool_use_id: tool_use.id,
+							content: `Content from ${url}:\n\n${content}`,
+						}
+					}),
+				)
+
+				tool_results.push(...visit_results)
 			}
 
 			messages.push({ role: "user", content: tool_results })

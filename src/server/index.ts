@@ -2,6 +2,7 @@ import Fastify from "fastify"
 import cors from "@fastify/cors"
 import dotenv from "dotenv"
 import { registerResearchRoute } from "./routes/research.js"
+import { registerRecordingRoute } from "./routes/recording.js"
 
 dotenv.config()
 
@@ -9,6 +10,7 @@ const app = Fastify({ logger: true })
 
 await app.register(cors, { origin: true })
 await registerResearchRoute(app)
+await registerRecordingRoute(app)
 
 const port = parseInt(process.env.PORT || "3001", 10)
 

@@ -4,28 +4,32 @@ interface Props {
 }
 
 export function BrowserView({ debug_url, is_loading }: Props) {
-	if (!debug_url) {
+	const embed_url = debug_url ? `${debug_url}?interactive=false` : null
+
+	if (!embed_url) {
 		return (
-			<div className="flex h-full min-h-[400px] items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900/50">
+			<div className="flex h-[480px] items-center justify-center rounded-2xl border border-steel-border bg-steel-surface">
 				{is_loading ? (
 					<div className="flex flex-col items-center gap-3">
-						<div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-700 border-t-blue-500" />
-						<p className="text-sm text-zinc-500">Starting browser session...</p>
+						<div className="h-6 w-6 animate-spin rounded-full border-2 border-steel-border border-t-steel-yellow" />
+						<p className="text-xs tracking-tight text-steel-body">
+							Starting browser session...
+						</p>
 					</div>
 				) : (
-					<p className="text-sm text-zinc-500">Browser view will appear here</p>
+					<p className="text-xs text-steel-body">Browser view will appear here</p>
 				)}
 			</div>
 		)
 	}
 
 	return (
-		<div className="overflow-hidden rounded-lg border border-zinc-800">
+		<div className="overflow-hidden rounded-2xl border border-steel-border">
 			<iframe
-				src={`${debug_url}?interactive=false`}
-				className="h-full w-full"
-				style={{ minHeight: "400px" }}
-				title="Live Browser Session"
+				src={embed_url}
+				className="h-[480px] w-full bg-steel-surface"
+				allow="autoplay"
+				title="Steel Live Browser"
 			/>
 		</div>
 	)

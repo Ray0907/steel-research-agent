@@ -3,35 +3,33 @@ import type { ProgressEvent, Source } from "../../shared/types.js"
 
 interface ResearchState {
 	is_loading: boolean
+	question: string | null
 	events: ProgressEvent[]
 	report: string | null
 	sources: Source[]
+	steel_session_id: string | null
 	session_viewer_url: string | null
 	debug_url: string | null
 	error: string | null
 }
 
+const INITIAL_STATE: ResearchState = {
+	is_loading: false,
+	question: null,
+	events: [],
+	report: null,
+	sources: [],
+	steel_session_id: null,
+	session_viewer_url: null,
+	debug_url: null,
+	error: null,
+}
+
 export function useResearchStream() {
-	const [state, setState] = useState<ResearchState>({
-		is_loading: false,
-		events: [],
-		report: null,
-		sources: [],
-		session_viewer_url: null,
-		debug_url: null,
-		error: null,
-	})
+	const [state, setState] = useState<ResearchState>(INITIAL_STATE)
 
 	const startResearch = useCallback(async (question: string) => {
-		setState({
-			is_loading: true,
-			events: [],
-			report: null,
-			sources: [],
-			session_viewer_url: null,
-			debug_url: null,
-			error: null,
-		})
+		setState({ ...INITIAL_STATE, is_loading: true, question })
 
 		try {
 			const response = await fetch("/api/research", {
@@ -65,6 +63,7 @@ export function useResearchStream() {
 						const next = { ...prev, events: [...prev.events, event] }
 
 						if (event.type === "session_created") {
+							next.steel_session_id = event.steel_session_id
 							next.session_viewer_url = event.session_viewer_url
 							next.debug_url = event.debug_url
 						}
@@ -90,19 +89,13 @@ export function useResearchStream() {
 			}))
 		}
 
-		setState(prev => ({ ...prev, is_loading: false }))
+		// Guard: ensure is_loading is cleared even if the stream ended
+		// without emitting a terminal event (report_ready or error)
+		setState(prev => prev.is_loading ? { ...prev, is_loading: false } : prev)
 	}, [])
 
 	const reset = useCallback(() => {
-		setState({
-			is_loading: false,
-			events: [],
-			report: null,
-			sources: [],
-			session_viewer_url: null,
-			debug_url: null,
-			error: null,
-		})
+		setState(INITIAL_STATE)
 	}, [])
 
 	return { ...state, startResearch, reset }
