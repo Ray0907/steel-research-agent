@@ -4,7 +4,7 @@ AI-powered deep web research using [Steel's](https://steel.dev) cloud browser in
 
 ![Agent researching with live browser view](https://github.com/user-attachments/assets/2d4fbd99-cafb-4c7b-a279-2704114179bc)
 
-![Research report with cited sources](https://github.com/user-attachments/assets/784181b6-0600-4ec9-bd23-eb39ca516b14)
+![Research report with cited sources](https://github.com/user-attachments/assets/1fc7d222-779b-476f-9622-e2fe1f5cf911)
 
 ## Features
 
