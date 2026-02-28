@@ -1,6 +1,6 @@
 # Steel Research Agent
 
-AI-powered deep web research using [Steel's](https://steel.dev) browser infrastructure. Ask a question, watch an AI agent browse the web in real-time, and get a comprehensive research report with cited sources.
+AI-powered deep web research using [Steel's](https://steel.dev) cloud browser infrastructure. Ask a question, watch an AI agent browse the web in real-time, and get a comprehensive research report with cited sources.
 
 ## Features
 
@@ -8,21 +8,92 @@ AI-powered deep web research using [Steel's](https://steel.dev) browser infrastr
 - **Claude-Powered Research** -- Uses Claude's tool-use API to autonomously decide what to search, which pages to read, and when to synthesize findings
 - **Cited Reports** -- Every claim in the final report is backed by numbered source citations
 - **Real-Time Activity Feed** -- See the agent's thought process and progress as it works
+- **Research History** -- IndexedDB-backed sidebar to revisit past research sessions
+- **Responsive Design** -- Fully responsive UI that works on desktop, tablet, and mobile
 
 ## Architecture
 
+```mermaid
+flowchart TB
+    subgraph Client["Frontend (React + Vite)"]
+        UI[Research Input]
+        Feed[Activity Feed]
+        Browser[Live Browser View]
+        Report[Report View]
+        History[History Sidebar]
+    end
+
+    subgraph Server["Backend (Fastify)"]
+        API["/api/research (SSE)"]
+        Agent[Research Agent Loop]
+        Proxy["/api/sessions/:id/recording"]
+    end
+
+    subgraph External["External Services"]
+        Claude[Claude API]
+        Steel[Steel Sessions API]
+        Scrape[Steel Scrape API]
+        PW[Playwright CDP]
+    end
+
+    UI -->|POST + SSE stream| API
+    API --> Agent
+    Agent -->|tool calls| Claude
+    Agent -->|create session| Steel
+    Agent -->|search & navigate| PW
+    Agent -->|extract content| Scrape
+    Agent -->|progress events| Feed
+    Steel -->|debugUrl iframe| Browser
+    Agent -->|report_ready| Report
+    History -->|IndexedDB| UI
+    Proxy -->|HLS proxy| Steel
 ```
-React + Tailwind (Vite)
-    | SSE
-    v
-Fastify (TypeScript)
-    |              |
-    v              v
-Claude API    Steel Sessions API
-                   |
-                   v
-              Playwright
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant S as Fastify Server
+    participant C as Claude API
+    participant B as Steel Browser
+
+    U->>F: Enter research question
+    F->>S: POST /api/research (SSE)
+    S->>B: Create browser session
+    B-->>F: debugUrl (live iframe)
+
+    loop Research Loop (max 10 iterations)
+        S->>C: messages + tools
+        C-->>S: tool_use (search_google)
+        S->>B: DuckDuckGo search
+        B-->>S: Search results
+        S-->>F: SSE: searching event
+
+        C-->>S: tool_use (visit_page x3 parallel)
+        S->>B: Scrape 3 pages in parallel
+        B-->>S: Markdown content
+        S-->>F: SSE: visiting/reading events
+
+        C-->>S: tool_use (finish_research)
+        S-->>F: SSE: report_ready
+    end
+
+    S->>B: Release session
+    F->>F: Save to IndexedDB history
 ```
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 19, Tailwind CSS v4, Vite 7 |
+| Backend | Fastify 5, TypeScript 5.9 |
+| AI | Claude Sonnet 4.6 (Anthropic SDK) |
+| Browser | Steel SDK, Playwright (CDP) |
+| Realtime | Server-Sent Events (SSE) |
+| Storage | IndexedDB (client-side history) |
+| Streaming | HLS.js (session recording) |
+| Markdown | react-markdown, remark-gfm |
 
 ## Steel Features Used
 
@@ -31,23 +102,11 @@ Claude API    Steel Sessions API
 - **Scrape API** -- Extract page content as clean markdown
 - **Playwright Integration** -- Full browser control via CDP WebSocket
 
-## Tech Stack
-
-Deliberately mirrors Steel's own stack for day-one readiness:
-
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React, Tailwind CSS, Vite |
-| Backend | Fastify, TypeScript |
-| AI | Claude API (Anthropic SDK) |
-| Browser | Steel SDK, Playwright |
-| Realtime | Server-Sent Events (SSE) |
-
 ## Setup
 
 ```bash
 # Clone and install
-git clone <repo-url>
+git clone https://github.com/Ray0907/steel-research-agent.git
 cd steel-research-agent
 pnpm install
 
@@ -65,9 +124,10 @@ Get your Steel API key at [app.steel.dev](https://app.steel.dev/settings/api-key
 
 1. Open http://localhost:5173
 2. Enter a research question
-3. Watch the AI agent browse the web in the left panel
-4. Follow the agent's progress in the right panel
+3. Watch the AI agent browse the web in the live browser panel
+4. Follow the agent's progress in the activity feed
 5. Read the final research report with citations
+6. Access past research from the history sidebar
 
 ## CLI Testing
 
