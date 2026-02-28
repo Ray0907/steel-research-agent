@@ -2,6 +2,10 @@
 
 AI-powered deep web research using [Steel's](https://steel.dev) cloud browser infrastructure. Ask a question, watch an AI agent browse the web in real-time, and get a comprehensive research report with cited sources.
 
+![Agent researching with live browser view](https://github.com/user-attachments/assets/2d4fbd99-cafb-4c7b-a279-2704114179bc)
+
+![Research report with cited sources](https://github.com/user-attachments/assets/784181b6-0600-4ec9-bd23-eb39ca516b14)
+
 ## Features
 
 - **Live Browser View** -- Watch the AI agent navigate, search, and read web pages in real-time via Steel's session embedding
