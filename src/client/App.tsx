@@ -3,6 +3,7 @@ import { ResearchInput } from "./components/ResearchInput.js"
 import { BrowserView } from "./components/BrowserView.js"
 import { ActivityFeed } from "./components/ActivityFeed.js"
 import { ReportView } from "./components/ReportView.js"
+import { SessionRecording } from "./components/SessionRecording.js"
 import { HistorySidebar } from "./components/HistorySidebar.js"
 import { useResearchStream } from "./hooks/useResearchStream.js"
 import { useResearchHistory } from "./hooks/useResearchHistory.js"
@@ -105,6 +106,9 @@ export default function App() {
 	const display_question = is_viewing_history
 		? history.session_selected!.question
 		: stream.question
+	const display_steel_session_id = is_viewing_history
+		? history.session_selected!.steel_session_id
+		: stream.steel_session_id
 
 	const show_report = is_done || is_viewing_history
 
@@ -272,6 +276,14 @@ export default function App() {
 							<h2 className="text-lg font-medium tracking-[-0.5px] text-steel-text">
 								{display_question}
 							</h2>
+						)}
+						{display_steel_session_id && (
+							<div>
+								<div className="mb-2 text-[11px] font-medium uppercase tracking-widest text-steel-body">
+									Session Recording
+								</div>
+								<SessionRecording steel_session_id={display_steel_session_id} />
+							</div>
 						)}
 						<ReportView report={display_report} sources={display_sources} />
 					</div>

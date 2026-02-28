@@ -1,7 +1,9 @@
 import type { FastifyInstance } from "fastify"
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 export async function registerRecordingRoute(app: FastifyInstance) {
-	// FIXME: recording video not rendering yet; session_id and segment_path need input validation (SSRF risk)
+	// HLS manifest proxy — fetches m3u8 from Steel and rewrites segment URLs
 	app.get("/api/sessions/:session_id/recording", async (request, reply) => {
 		const { session_id } = request.params as { session_id: string }
 		const steel_api_key = process.env.STEEL_API_KEY
@@ -10,22 +12,35 @@ export async function registerRecordingRoute(app: FastifyInstance) {
 			return reply.status(500).send({ error: "Missing Steel API key" })
 		}
 
+		if (!UUID_RE.test(session_id)) {
+			return reply.status(400).send({ error: "Invalid session ID" })
+		}
+
 		const response = await fetch(
 			`https://api.steel.dev/v1/sessions/${session_id}/hls`,
 			{ headers: { "steel-api-key": steel_api_key } },
 		)
 
 		if (!response.ok) {
-			return reply.status(response.status).send({ error: "Failed to fetch recording" })
+			const text = await response.text().catch(() => "")
+			app.log.warn({ status: response.status, body: text }, "Steel HLS manifest fetch failed")
+			return reply.status(response.status).send({ error: "Recording not available" })
 		}
 
 		const content_type = response.headers.get("content-type") || "application/vnd.apple.mpegurl"
 		let body = await response.text()
 
-		// Rewrite absolute segment URLs in the m3u8 to go through our proxy
+		// Rewrite absolute Steel API URLs to go through our proxy
 		body = body.replace(
 			/https:\/\/api\.steel\.dev\/v1\/sessions\/[^/]+\//g,
 			`/api/sessions/${session_id}/recording-segment/`,
+		)
+
+		// Rewrite relative URLs (lines that don't start with / or http and aren't comments/tags)
+		// HLS manifests may use relative segment paths like "segments/0.ts" or "0.ts"
+		body = body.replace(
+			/^(?!#)(?!https?:\/\/)(?!\/)(.+)$/gm,
+			`/api/sessions/${session_id}/recording-segment/$1`,
 		)
 
 		reply.header("Content-Type", content_type)
@@ -33,7 +48,7 @@ export async function registerRecordingRoute(app: FastifyInstance) {
 		return reply.send(body)
 	})
 
-	// Proxy individual HLS segments
+	// Proxy individual HLS segments (and any other referenced files)
 	app.get("/api/sessions/:session_id/recording-segment/*", async (request, reply) => {
 		const { session_id } = request.params as { session_id: string }
 		const segment_path = (request.params as Record<string, string>)["*"]
@@ -41,6 +56,15 @@ export async function registerRecordingRoute(app: FastifyInstance) {
 
 		if (!steel_api_key) {
 			return reply.status(500).send({ error: "Missing Steel API key" })
+		}
+
+		if (!UUID_RE.test(session_id)) {
+			return reply.status(400).send({ error: "Invalid session ID" })
+		}
+
+		// Only allow safe segment paths (alphanumeric, hyphens, dots, slashes)
+		if (!segment_path || !/^[\w./-]+$/.test(segment_path)) {
+			return reply.status(400).send({ error: "Invalid segment path" })
 		}
 
 		const response = await fetch(
