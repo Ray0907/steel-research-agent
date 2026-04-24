@@ -3,7 +3,7 @@ import { SYSTEM_PROMPT, TOOL_DEFINITIONS } from "./prompts.js"
 import {
 	createBrowserSession,
 	releaseBrowserSession,
-	searchGoogle,
+	searchWeb,
 	visitPage,
 	type BrowserSession,
 } from "./tools.js"
@@ -19,6 +19,7 @@ export async function runResearch(
 	steel_api_key: string,
 	anthropic_api_key: string,
 	emit: (event: ProgressEvent) => void,
+	tavily_api_key?: string,
 ): Promise<ResearchResult> {
 	const anthropic = new Anthropic({ apiKey: anthropic_api_key })
 
@@ -95,7 +96,7 @@ export async function runResearch(
 				const input = tool_use.input as Record<string, unknown>
 				const query = input.query as string
 				emit({ type: "searching", query })
-				const result = await searchGoogle(bs!, query)
+				const result = await searchWeb(bs!, query, tavily_api_key)
 				tool_results.push({
 					type: "tool_result",
 					tool_use_id: tool_use.id,

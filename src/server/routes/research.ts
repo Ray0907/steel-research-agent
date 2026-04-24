@@ -18,6 +18,7 @@ export async function registerResearchRoute(app: FastifyInstance) {
 
 		const steel_api_key = process.env.STEEL_API_KEY
 		const anthropic_api_key = process.env.ANTHROPIC_API_KEY
+		const tavily_api_key = process.env.TAVILY_API_KEY
 
 		if (!steel_api_key || !anthropic_api_key) {
 			return reply.status(500).send({ error: "Missing API keys" })
@@ -34,7 +35,7 @@ export async function registerResearchRoute(app: FastifyInstance) {
 		}
 
 		try {
-			await runResearch(question, steel_api_key, anthropic_api_key, emit)
+			await runResearch(question, steel_api_key, anthropic_api_key, emit, tavily_api_key)
 		} catch (error) {
 			const message = error instanceof Error ? error.message : "Unknown error"
 			emit({ type: "error", message })
