@@ -1,5 +1,6 @@
 import { chromium, type Browser, type Page } from "playwright"
 import Steel from "steel-sdk"
+import { tavily } from "@tavily/core"
 
 export interface BrowserSession {
 	steel_client: Steel
@@ -78,6 +79,37 @@ export async function searchGoogle(
 	return filtered
 		.map((r, i) => `${i + 1}. **${r.title}**\n   URL: ${r.url}\n   ${r.snippet}`)
 		.join("\n\n")
+}
+
+async function tavilySearch(apiKey: string, query: string): Promise<string> {
+	const client = tavily({ apiKey })
+	const response = await client.search(query, {
+		maxResults: 10,
+		searchDepth: "basic",
+	})
+
+	const results = response.results
+	if (!results || results.length === 0) {
+		return "No search results found. Try a different query."
+	}
+
+	return results
+		.map(
+			(r, i) =>
+				`${i + 1}. **${r.title}**\n   URL: ${r.url}\n   ${r.content}`,
+		)
+		.join("\n\n")
+}
+
+export async function searchWeb(
+	bs: BrowserSession,
+	query: string,
+	tavilyApiKey?: string,
+): Promise<string> {
+	if (tavilyApiKey) {
+		return tavilySearch(tavilyApiKey, query)
+	}
+	return searchGoogle(bs, query)
 }
 
 const BLOCKED_DOMAINS = ["google.com", "google.co", "googleapis.com", "gstatic.com"]
