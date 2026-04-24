@@ -95,7 +95,7 @@ async function tavilySearch(apiKey: string, query: string): Promise<string> {
 
 	return results
 		.map(
-			(r: { title: string; url: string; content: string }, i: number) =>
+			(r, i) =>
 				`${i + 1}. **${r.title}**\n   URL: ${r.url}\n   ${r.content}`,
 		)
 		.join("\n\n")
